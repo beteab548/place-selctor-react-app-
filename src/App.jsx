@@ -4,12 +4,29 @@ import { AVAILABLE_PLACES } from "./data.js";
 import Modal from "./components/Modal.jsx";
 import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
 import logoImg from "./assets/logo.png";
+import { sortPlacesByDistance } from "./loc.js";
 
 function App() {
+  let memoStoredIds = [];
+  useEffect(() => {
+    memoStoredIds = localStorage.getItem("stored_Ids") || [];
+    console.log(memoStoredIds);
+  }, []);
   const modal = useRef();
   const selectedPlace = useRef();
   const [pickedPlaces, setPickedPlaces] = useState([]);
+  const [sortedplacesArray, setSortedPlacesArray] = useState([]);
 
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const sortedPlaces = sortPlacesByDistance(
+        AVAILABLE_PLACES,
+        position.coords.latitude,
+        position.coords.longitude
+      );
+      setSortedPlacesArray(sortedPlaces);
+    });
+  }, []);
   function handleStartRemovePlace(id) {
     modal.current.open();
     selectedPlace.current = id;
@@ -20,21 +37,29 @@ function App() {
   function handleSelectPlace(id) {
     setPickedPlaces((prevPickedPlaces) => {
       if (prevPickedPlaces.some((place) => place.id === id)) {
+        const prevstoredId =
+          JSON.parse(localStorage.getItem("stored_Ids")) || [];
+        localStorage.setItem(
+          "stored_Ids",
+          JSON.stringify([...prevPickedPlaces])
+        );
         return prevPickedPlaces;
       }
       const place = AVAILABLE_PLACES.find((place) => place.id === id);
-
+      const prevstoredId = JSON.parse(localStorage.getItem("stored_Ids")) || [];
+      localStorage.setItem(
+        "stored_Ids",
+        JSON.stringify([place, ...prevPickedPlaces])
+      );
       return [place, ...prevPickedPlaces];
     });
   }
-
   function handleRemovePlace() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
     modal.current.close();
   }
-
   return (
     <>
       <Modal ref={modal}>
@@ -43,7 +68,6 @@ function App() {
           onConfirm={handleRemovePlace}
         />
       </Modal>
-
       <header>
         <img src={logoImg} alt="Stylized globe" />
         <h1>PlacePicker</h1>
@@ -56,12 +80,13 @@ function App() {
         <Places
           title="I'd like to visit ..."
           fallbackText={"Select the places you would like to visit below."}
-          places={pickedPlaces}
+          places={memoStoredIds}
           onSelectPlace={handleStartRemovePlace}
         />
         <Places
           title="Available Places"
-          places={AVAILABLE_PLACES}
+          places={sortedplacesArray}
+          fallbackText={"waiting to sort the places..."}
           onSelectPlace={handleSelectPlace}
         />
       </main>
