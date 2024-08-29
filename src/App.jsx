@@ -7,14 +7,11 @@ import logoImg from "./assets/logo.png";
 import { sortPlacesByDistance } from "./loc.js";
 
 function App() {
-  let memoStoredIds = [];
-  useEffect(() => {
-    memoStoredIds = localStorage.getItem("stored_Ids") || [];
-    console.log(memoStoredIds);
-  }, []);
+  const memoStoredIds = JSON.parse(localStorage.getItem("stored_Ids")) || [];
+  console.log(memoStoredIds);
   const modal = useRef();
   const selectedPlace = useRef();
-  const [pickedPlaces, setPickedPlaces] = useState([]);
+  const [pickedPlaces, setPickedPlaces] = useState(memoStoredIds);
   const [sortedplacesArray, setSortedPlacesArray] = useState([]);
 
   useEffect(() => {
@@ -80,7 +77,7 @@ function App() {
         <Places
           title="I'd like to visit ..."
           fallbackText={"Select the places you would like to visit below."}
-          places={memoStoredIds}
+          places={pickedPlaces}
           onSelectPlace={handleStartRemovePlace}
         />
         <Places
