@@ -8,12 +8,10 @@ import { sortPlacesByDistance } from "./loc.js";
 
 function App() {
   const memoStoredIds = JSON.parse(localStorage.getItem("stored_Ids")) || [];
-  console.log(memoStoredIds);
-  const modal = useRef();
   const selectedPlace = useRef();
+  const [showModal, setShowModal] = useState(false);
   const [pickedPlaces, setPickedPlaces] = useState(memoStoredIds);
   const [sortedplacesArray, setSortedPlacesArray] = useState([]);
-
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((position) => {
       const sortedPlaces = sortPlacesByDistance(
@@ -25,11 +23,23 @@ function App() {
     });
   }, []);
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setShowModal(true);
     selectedPlace.current = id;
+    const sortedplacesArray =
+      JSON.parse(localStorage.getItem("stored_Ids")) || [];
+    console.log(sortedplacesArray);
+    const updatedSortedplacesArray = sortedplacesArray.filter(
+      (storedPlacesid) => {
+        return storedPlacesid.id !== id;
+      }
+    );
+    localStorage.setItem(
+      "stored_Ids",
+      JSON.stringify(updatedSortedplacesArray)
+    );
   }
   function handleStopRemovePlace() {
-    modal.current.close();
+    setShowModal(false);
   }
   function handleSelectPlace(id) {
     setPickedPlaces((prevPickedPlaces) => {
@@ -55,11 +65,11 @@ function App() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
-    modal.current.close();
+    setShowModal(false);
   }
   return (
     <>
-      <Modal ref={modal}>
+      <Modal open={showModal}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}
